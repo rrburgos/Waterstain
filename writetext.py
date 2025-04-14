@@ -1,46 +1,102 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox
 from PIL import Image, ImageDraw, ImageFont
 
-def text_watermark():
-    with Image.open("bald.jpg").convert("RGBA") as base:
 
-        # make a blank image for the text, initialized to transparent text color
-        txt = Image.new("RGBA", base.size, (255, 255, 255, 0))
+class WatermarkApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Watermark App")
+        self.root.geometry("400x300")
 
-        # get a font
-        fnt = ImageFont.truetype("C:/Windows/Fonts/ARIAL.TTF", 40)
-        # get a drawing context
-        d = ImageDraw.Draw(txt)
-        #Watermark text = wm_text
-        wm_text = input('Enter Watermark Text: ')
-        for height in range(0,base.height,55):
-            for width in range(0,base.width,100):
-                # draw text, half opacity
-                d.text((width,height), wm_text, font=fnt, fill=(255, 255, 255, 128))
+        # Variables
+        self.image_path = None
+        self.watermark_text = tk.StringVar(value="Your Watermark")
 
-        out = Image.alpha_composite(base, txt)
+        # GUI Elements
+        self.create_widgets()
 
-        out.show()
+    def create_widgets(self):
+        # Upload Button
+        upload_btn = tk.Button(self.root, text="Upload Image", command=self.upload_image)
+        upload_btn.pack(pady=20)
 
-def apply_watermark_txt_ln(self):
-    """Function used to apply a single instance of watermark text.
-    This function overwrites the previous watermark."""
-    self.image = self.original_img_copy
-    self.configure_tkimg()
-    # Create Blank Image for the text, text is initially transparent
-    txt = Image.new(size=self.image.size,
-                    mode='RGBA',
-                    color=(255, 255, 255, 0))
-    # Get TrueType font from Windows System
-    font = ImageFont.truetype(font='C:/Windows/Fonts/ARIAL.TTF', size=self.watermark.font_size)
-    # Get drawing context
-    d = ImageDraw.Draw(txt)
-    txtbox = ImageDraw.Draw(txt).textbbox(xy=(self.watermark.x,self.watermark.y),
-                                          text=self.watermark.text,
-                                          font=font)
-    for height in range(0, self.image.height, (txtbox[2] - txtbox[0])):
-        for width in range(0, self.image.width, (txtbox[3] - txtbox[1])):
-            # draw text, half opacity
-            d.text((width, height), self.text, font=font, fill=(255, 255, 255, 128))
-    composite = Image.alpha_composite(self.image, txt)
-    self.image = composite
-    self.configure_tkimg()
+        # Watermark Text Entry
+        tk.Label(self.root, text="Watermark Text:").pack()
+        text_entry = tk.Entry(self.root, textvariable=self.watermark_text, width=30)
+        text_entry.pack(pady=10)
+
+        # Apply Watermark Button
+        apply_btn = tk.Button(self.root, text="Apply Watermark", command=self.apply_watermark)
+        apply_btn.pack(pady=20)
+
+        # Status Label
+        self.status = tk.Label(self.root, text="")
+        self.status.pack(pady=10)
+
+    def upload_image(self):
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.bmp")]
+        )
+        if file_path:
+            self.image_path = file_path
+            self.status.config(text="Image uploaded successfully!")
+
+    def apply_watermark(self):
+        if not self.image_path:
+            messagebox.showerror("Error", "Please upload an image first!")
+            return
+
+        try:
+            # Open the image
+            image = Image.open(self.image_path).convert("RGBA")
+
+            # Create a transparent layer for the watermark
+            watermark = Image.new("RGBA", image.size, (0, 0, 0, 0))
+            draw = ImageDraw.Draw(watermark)
+
+            # Set font (using default font, size 36)
+            try:
+                font = ImageFont.truetype("arial.ttf", 36)
+            except:
+                font = ImageFont.load_default()
+
+            # Get text size
+            text = self.watermark_text.get()
+            bbox = draw.textbbox((0, 0), text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+
+            # Position the watermark (center of image)
+            width, height = image.size
+            x = (width - text_width) // 2
+            y = (height - text_height) // 2
+
+            # Draw the watermark (white text with semi-transparent black background)
+            draw.rectangle(
+                [x - 10, y - 10, x + text_width + 10, y + text_height + 10],
+                fill=(0, 0, 0, 128)
+            )
+            draw.text((x, y), text, font=font, fill=(255, 255, 255, 255))
+
+            # Combine original image with watermark
+            watermarked = Image.alpha_composite(image, watermark)
+
+            # Convert back to RGB and save
+            watermarked_rgb = watermarked.convert("RGB")
+            save_path = filedialog.asksaveasfilename(
+                defaultextension=".jpg",
+                filetypes=[("JPEG files", "*.jpg"), ("PNG files", "*.png")]
+            )
+            if save_path:
+                watermarked_rgb.save(save_path)
+                self.status.config(text="Watermark applied and saved!")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = WatermarkApp(root)
+    root.mainloop()

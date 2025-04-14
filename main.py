@@ -5,7 +5,6 @@ from PIL import Image, ImageTk
 from widgetmanager import *
 
 
-
 def y_up(event):
     if image_frame.original_img_copy:
         watermark.y -= 5
@@ -77,7 +76,11 @@ watermark = Watermark(window)
 image_frame = ImageFrame(window, watermark)
 image_frame.grid(column=0, row=0, rowspan=5, padx=5)
 
-#-----Pattern Button-----#
+#-----Logo Widget-----#
+logo = LogoWidget(window)
+logo.grid(column=1,row=0)
+
+#-----Pattern Widget-----#
 pattern = ApplyPatternWidget(window,image_frame.apply_watermark_pattern)
 pattern.grid(column=1,row=2)
 

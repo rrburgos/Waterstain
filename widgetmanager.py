@@ -13,10 +13,12 @@ class ImageFrame(Label):
         self.tkimg = ImageTk.PhotoImage(self.image)
         self.configure(image=self.tkimg)
         self.original_img_copy = None #Image copy is empty upon creation.
+        self.aspect_ratio = None #Aspect Ratio for resizing image
 
 
     def configure_tkimg(self):
-        self.tkimg = ImageTk.PhotoImage(self.image)
+        """Resizes Image for preview window."""
+        self.tkimg = ImageTk.PhotoImage(self.image.resize((640, int(640 * self.aspect_ratio)), Image.Resampling.LANCZOS))
         self.configure(image=self.tkimg)
 
     def apply_watermark_txt_ln(self):
@@ -77,9 +79,9 @@ class ImageFrame(Label):
             if original_width == 0:  # Avoid division by zero
                 messagebox.showerror(message="Error: Image width is zero.",title='Invalid Image Size')
                 return
-            aspect_ratio = original_height / original_width
-            #Resize the loaded image using the new dimensions
-            self.image = img_loaded.resize((640, int(640 * aspect_ratio)), Image.Resampling.LANCZOS)
+            self.aspect_ratio = original_height / original_width
+            #Loads Original Image
+            self.image = img_loaded
             #Create a Copy of the Original. ONLY done when load_image() is run.
             self.original_img_copy = self.image
             #Create the Tkinter PhotoImage and update the label
@@ -99,6 +101,15 @@ class ImageFrame(Label):
                                                     ("gif", ".gif")])
         if file_path is not None:  # if dialog not closed with "cancel".
             self.image.save(fp=file_path)
+
+class LogoWidget(Frame):
+    def __init__(self,parent):
+        super().__init__(parent)
+        self.logo = Image.open("logo/Waterstain.png").convert('RGBA').resize((200,200),Image.Resampling.LANCZOS)
+        self.logo_tk = ImageTk.PhotoImage(self.logo)
+        self.logo_label = Label(self)
+        self.logo_label.configure(image=self.logo_tk)
+        self.logo_label.grid(column=0,row=0)
 
 
 class ApplyPatternWidget(Frame):
@@ -179,7 +190,6 @@ class Watermark:
         self.opacity = 100
         self.color = (255,255,255)
         self.col_op = (self.color[0],self.color[1],self.color[2],self.opacity)
-        #TODO Incorporate Rotation
         #self.angle = 0
         self.x = 50
         self.y = 50
